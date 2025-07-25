@@ -14,6 +14,7 @@ const SECRET_KEY = "class29_secret";
 app.use(cors());
 app.use(bodyParser.json());
 app.use("/uploads", express.static("uploads"));
+app.use(express.static("public"));
 
 const storage = multer.diskStorage({
   destination: "uploads/",

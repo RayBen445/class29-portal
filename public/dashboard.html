@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - Class29 Portal</title>
+  <style>
+    :root {
+      --bg-color: #eef4fa;
+      --text-color: #2e3b4e;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: all 0.3s ease;
+    }
+    h2 {
+      color: var(--text-color);
+    }
+    .profile img {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid #2e86de;
+      margin-bottom: 12px;
+    }
+    button {
+      margin: 8px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      cursor: pointer;
+    }
+    #logoutBtn { background-color: #dc3545; }
+    #editBtn { background-color: #17a2b8; }
+    #saveBtn { background-color: #28a745; }
+    #eventBtn { background-color: #6f42c1; }
+    #adminBtn { background-color: #fd7e14; }
+    #toggleDark { background-color: #343a40; }
+    #logoutBtn:hover { background-color: #b02a37; }
+    #editBtn:hover { background-color: #10738e; }
+    #saveBtn:hover { background-color: #218838; }
+    #eventBtn:hover { background-color: #59329c; }
+    #adminBtn:hover { background-color: #d85d00; }
+    #toggleDark:hover { background-color: #212529; }
+    #editForm {
+      margin-top: 20px;
+      display: none;
+    }
+    #editForm input {
+      display: block;
+      margin: 8px auto;
+      padding: 8px;
+      width: 80%;
+      max-width: 320px;
+    }
+    #imagePreview {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      object-fit: cover;
+      margin: 12px auto;
+      display: none;
+      border: 2px dashed #888;
+    }
+    #notifications {
+      margin-top: 20px;
+      padding: 12px;
+      background-color: #fff3cd;
+      border: 1px solid #ffeeba;
+      border-radius: 6px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h2>👋 Welcome Back to Class29</h2>
+
+  <div class="profile" id="profileBox">
+    <p>Loading profile...</p>
+  </div>
+
+  <button id="editBtn">Edit Profile</button>
+
+  <div id="editForm">
+    <input type="text" id="editName" placeholder="Full Name" />
+    <input type="email" id="editEmail" placeholder="Email" />
+    <input type="text" id="editImage" placeholder="Profile Image URL" />
+    <img id="imagePreview" alt="New Image Preview" />
+    <button id="saveBtn">Save Changes</button>
+  </div>
+
+  <button id="eventBtn">Register for Events</button>
+  <button id="adminBtn">Exco Tools</button>
+  <button id="toggleDark">Toggle Dark Mode</button>
+  <button id="logoutBtn">Logout</button>
+
+  <div id="notifications"></div>
+
+  <script>
+    const token = localStorage.getItem("authToken");
+    if (!token) window.location.href = "login.html";
+
+    const decoded = JSON.parse(atob(token.split('.')[1]));
+    const matric = decoded?.matric;
+    const role = decoded?.role;
+
+    function previewImage(url) {
+      const img = document.getElementById("imagePreview");
+      if (url) {
+        img.src = url;
+        img.style.display = "block";
+      } else {
+        img.style.display = "none";
+      }
+    }
+
+    async function loadProfile() {
+      try {
+        const res = await fetch(`/api/user/${matric}`);
+        const data = await res.json();
+
+        if (!res.ok || !data) {
+          document.getElementById("profileBox").innerHTML = `<p>User not found</p>`;
+          return;
+        }
+
+        document.getElementById("profileBox").innerHTML = `
+          <img src="${data.image}" alt="Profile Picture" />
+          <p><strong>Name:</strong> ${data.fullName}</p>
+          <p><strong>Matric:</strong> ${data.matric}</p>
+          <p><strong>Email:</strong> ${data.email}</p>
+          <p><strong>Role:</strong> ${data.role}</p>
+        `;
+        document.getElementById("editName").value = data.fullName;
+        document.getElementById("editEmail").value = data.email;
+        document.getElementById("editImage").value = data.image;
+        previewImage(data.image);
+
+        if (role !== "exco") {
+          document.getElementById("adminBtn").style.display = "none";
+        }
+
+        showNotification("🎉 Welcome, " + data.fullName + "!");
+
+      } catch (err) {
+        console.error("Error loading profile:", err);
+        document.getElementById("profileBox").innerHTML = `<p>Server error</p>`;
+      }
+    }
+
+    loadProfile();
+
+    function showNotification(message) {
+      const box = document.getElementById("notifications");
+      box.textContent = message;
+      box.style.display = "block";
+    }
+
+    document.getElementById("logoutBtn").onclick = () => {
+      localStorage.removeItem("authToken");
+      window.location.href = "login.html";
+    };
+
+    document.getElementById("editBtn").onclick = () => {
+      document.getElementById("editForm").style.display = "block";
+    };
+
+    document.getElementById("editImage").oninput = (e) => {
+      previewImage(e.target.value);
+    };
+
+    document.getElementById("saveBtn").onclick = async () => {
+      const fullName = document.getElementById("editName").value;
+      const email = document.getElementById("editEmail").value;
+      const image = document.getElementById("editImage").value;
+
+      try {
+        const res = await fetch(`/api/user/${matric}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fullName, email, image }),
+        });
+
+        if (res.ok) {
+          showNotification("✅ Profile updated!");
+          loadProfile();
+          document.getElementById("editForm").style.display = "none";
+        } else {
+          alert("❌ Failed to update.");
+        }
+      } catch (err) {
+        alert("⚠️ Server error during update.");
+        console.error(err);
+      }
+    };
+
+    document.getElementById("toggleDark").onclick = () => {
+      const root = document.documentElement;
+      const isLight = getComputedStyle(root).getPropertyValue('--bg-color') === '#eef4fa';
+      root.style.setProperty('--bg-color', isLight ? '#1c1c1c' : '#eef4fa');
+      root.style.setProperty('--text-color', isLight ? '#f1f1f1' : '#2e3b4e');
+    };
+
+    document.getElementById("eventBtn").onclick = () => {
+      window.location.href = "events.html";
+    };
+
+    document.getElementById("adminBtn").onclick = () => {
+      window.location.href = "exco-tools.html";
+    };
+  </script>
+</body>
+</html>

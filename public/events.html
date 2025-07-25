@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Class29 Events</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 30px;
+      background-color: #f0f8ff;
+      color: #2e3b4e;
+      text-align: center;
+    }
+    h2 { margin-bottom: 20px; }
+    .event {
+      border: 1px solid #ccc;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 400px;
+      border-radius: 8px;
+      background-color: #ffffff;
+    }
+    button {
+      background-color: #28a745;
+      color: white;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <h2>📅 Available Events</h2>
+  <div id="eventList">
+    <p>Loading events...</p>
+  </div>
+
+  <script>
+    async function loadEvents() {
+      try {
+        const res = await fetch("/api/events");
+        const events = await res.json();
+
+        if (!res.ok || !events.length) {
+          document.getElementById("eventList").innerHTML = `<p>No events found</p>`;
+          return;
+        }
+
+        document.getElementById("eventList").innerHTML = events.map(event => `
+          <div class="event">
+            <h3>${event.title}</h3>
+            <p>${event.description}</p>
+            <p><strong>Date:</strong> ${event.date}</p>
+            <button onclick="register('${event.id}')">Register</button>
+          </div>
+        `).join("");
+      } catch (err) {
+        console.error("Error fetching events:", err);
+        document.getElementById("eventList").innerHTML = `<p>Server error</p>`;
+      }
+    }
+
+    async function register(eventId) {
+      try {
+        const res = await fetch(`/api/events/${eventId}/register`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + localStorage.getItem("authToken"),
+          }
+        });
+
+        if (res.ok) {
+          alert("✅ Registered successfully!");
+        } else {
+          alert("❌ Registration failed.");
+        }
+      } catch (err) {
+        alert("⚠️ Server error during registration.");
+      }
+    }
+
+    loadEvents();
+  </script>
+</body>
+</html>

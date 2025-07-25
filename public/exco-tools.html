@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exco Admin Panel</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background-color: #f7f9fc;
+      color: #2e3b4e;
+      text-align: center;
+    }
+    h2 { margin-bottom: 20px; }
+    table {
+      width: 100%;
+      max-width: 800px;
+      margin: 20px auto;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      border: 1px solid #ccc;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    button {
+      padding: 6px 10px;
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #a81f2d;
+    }
+    #filter {
+      margin-bottom: 20px;
+      padding: 8px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <h2>🛠️ Class29 Admin Tools</h2>
+  <select id="filter">
+    <option value="">Filter by Role</option>
+    <option value="student">Student</option>
+    <option value="exco">Exco</option>
+  </select>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Full Name</th>
+        <th>Matric</th>
+        <th>Email</th>
+        <th>Role</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="userTable">
+      <tr><td colspan="5">Loading users...</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    async function loadUsers(role = "") {
+      try {
+        const res = await fetch("/api/users" + (role ? `?role=${role}` : ""));
+        const users = await res.json();
+
+        if (!res.ok || !users.length) {
+          document.getElementById("userTable").innerHTML = `<tr><td colspan="5">No users found</td></tr>`;
+          return;
+        }
+
+        document.getElementById("userTable").innerHTML = users.map(user => `
+          <tr>
+            <td>${user.fullName}</td>
+            <td>${user.matric}</td>
+            <td>${user.email}</td>
+            <td>${user.role}</td>
+            <td><button onclick="removeUser('${user.matric}')">Remove</button></td>
+          </tr>
+        `).join("");
+      } catch (err) {
+        console.error("Error loading users:", err);
+        document.getElementById("userTable").innerHTML = `<tr><td colspan="5">Server error</td></tr>`;
+      }
+    }
+
+    async function removeUser(matric) {
+      if (!confirm("⚠️ Are you sure you want to remove this user?")) return;
+
+      try {
+        const res = await fetch(`/api/user/${matric}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": "Bearer " + localStorage.getItem("authToken")
+          }
+        });
+
+        if (res.ok) {
+          alert("✅ User removed successfully");
+          loadUsers(document.getElementById("filter").value);
+        } else {
+          alert("❌ Failed to remove user");
+        }
+      } catch (err) {
+        alert("⚠️ Server error during removal");
+      }
+    }
+
+    document.getElementById("filter").onchange = (e) => {
+      loadUsers(e.target.value);
+    };
+
+    loadUsers();
+  </script>
+</body>
+</html>

@@ -4,12 +4,12 @@ const multer = require("multer");
 const bodyParser = require("body-parser");
 const path = require("path");
 const fs = require("fs");
-const bcrypt = require("bcryptjs"); // ✅ Switched from bcrypt
+const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const app = express();
-const PORT = 4000;
-const SECRET_KEY = "class29_secret";
+const PORT = process.env.PORT || 4000;
+const SECRET_KEY = process.env.SECRET_KEY || "class29_secret";
 
 app.use(cors());
 app.use(bodyParser.json());

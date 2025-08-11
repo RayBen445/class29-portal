@@ -70,7 +70,8 @@
       const formData = new FormData(form);
 
       try {
-        const res = await fetch("/api/login", {
+        // POST to /api/register (not /api/login)
+        const res = await fetch("/api/register", {
           method: "POST",
           body: formData,
         });

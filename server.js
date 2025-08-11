@@ -36,7 +36,7 @@ const saveUsers = (users) => {
 };
 
 // 🔐 Register User
-app.post("/api/login", upload.single("image"), async (req, res) => {
+app.post("/api/register", upload.single("image"), async (req, res) => {
   const { fullName, matric, email, password, role } = req.body;
   const image = req.file ? `/uploads/${req.file.filename}` : "";
 
@@ -61,7 +61,7 @@ app.post("/api/auth/login", async (req, res) => {
   const { matric, password } = req.body;
   const users = loadUsers();
   const user = users.find(u => u.matric === matric);
-  if (!user) return res.status(404).json({ message: "User not found" });
+  if (!user) return res.status(404).json({ message: "Matric not found" });
 
   const match = await bcrypt.compare(password, user.password);
   if (!match) return res.status(401).json({ message: "Incorrect password" });
@@ -83,7 +83,7 @@ app.get("/api/user/:matric", (req, res) => {
   const { matric } = req.params;
   const users = loadUsers();
   const user = users.find(u => u.matric === matric);
-  if (!user) return res.status(404).json({ message: "Matric not found" });
+  if (!user) return res.status(404).json({ message: "User not found" });
   res.json(user);
 });
 
@@ -106,6 +106,7 @@ app.delete("/api/user/:matric", (req, res) => {
   const { matric } = req.params;
   const users = loadUsers();
   const filtered = users.filter(u => u.matric !== matric);
+
   if (users.length === filtered.length) {
     return res.status(404).json({ message: "User not found" });
   }

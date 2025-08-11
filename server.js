@@ -35,8 +35,8 @@ const saveUsers = (users) => {
   fs.writeFileSync("users.json", JSON.stringify(users, null, 2));
 };
 
-// 🔐 Register User
-app.post("/api/login", upload.single("image"), async (req, res) => {
+// Registration endpoint
+app.post("/api/register", upload.single("image"), async (req, res) => {
   const { fullName, matric, email, password, role } = req.body;
   const image = req.file ? `/uploads/${req.file.filename}` : "";
 
@@ -56,12 +56,12 @@ app.post("/api/login", upload.single("image"), async (req, res) => {
   res.status(200).json({ message: "Registration successful", user });
 });
 
-// 🔓 Login
+// Login endpoint
 app.post("/api/auth/login", async (req, res) => {
   const { matric, password } = req.body;
   const users = loadUsers();
   const user = users.find(u => u.matric === matric);
-  if (!user) return res.status(404).json({ message: "User not found" });
+  if (!user) return res.status(404).json({ message: "Matric not found" });
 
   const match = await bcrypt.compare(password, user.password);
   if (!match) return res.status(401).json({ message: "Incorrect password" });
@@ -70,67 +70,8 @@ app.post("/api/auth/login", async (req, res) => {
   res.json({ message: "Login successful", token });
 });
 
-// 🧑‍🤝‍🧑 Filter by Role
-app.get("/api/users", (req, res) => {
-  const { role } = req.query;
-  const users = loadUsers();
-  const filtered = role ? users.filter(u => u.role === role) : users;
-  res.json(filtered);
-});
+// Other endpoints as needed...
 
-// 🔍 Get user by matric
-app.get("/api/user/:matric", (req, res) => {
-  const { matric } = req.params;
-  const users = loadUsers();
-  const user = users.find(u => u.matric === matric);
-  if (!user) return res.status(404).json({ message: "Matric not found" });
-  res.json(user);
-});
-
-// 🖼️ Update profile image
-app.put("/api/user/:matric/image", upload.single("image"), (req, res) => {
-  const { matric } = req.params;
-  const users = loadUsers();
-  const index = users.findIndex(u => u.matric === matric);
-  if (index === -1) return res.status(404).json({ message: "User not found" });
-
-  const image = req.file ? `/uploads/${req.file.filename}` : "";
-  users[index].image = image;
-  saveUsers(users);
-
-  res.json({ message: "Image updated", user: users[index] });
-});
-
-// 🧹 Delete user
-app.delete("/api/user/:matric", (req, res) => {
-  const { matric } = req.params;
-  const users = loadUsers();
-  const filtered = users.filter(u => u.matric !== matric);
-  if (users.length === filtered.length) {
-    return res.status(404).json({ message: "User not found" });
-  }
-
-  saveUsers(filtered);
-  res.json({ message: "User deleted" });
-});
-
-// 📚 Register for event
-app.post("/api/event/register", (req, res) => {
-  const { matric, eventId } = req.body;
-  if (!matric || !eventId) return res.status(400).json({ message: "Missing data" });
-
-  let records = [];
-  try {
-    records = JSON.parse(fs.readFileSync("events.json", "utf8"));
-  } catch {}
-
-  records.push({ matric, eventId, timestamp: Date.now() });
-  fs.writeFileSync("events.json", JSON.stringify(records, null, 2));
-
-  res.json({ message: "Registration saved" });
-});
-
-// 🌱 Root
 app.get("/", (req, res) => {
   res.send("Class 29 Portal Backend ✅");
 });
